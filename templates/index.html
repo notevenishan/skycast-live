@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SkyCast | Antigravity Live</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100;200;300;400;500;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            /* Ultra Minimal Glass with slightly more presence */
+            --glass-bg: rgba(255, 255, 255, 0.12);
+            --glass-border: rgba(255, 255, 255, 0.15);
+            --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+            --text-primary: #ffffff;
+            --text-muted: rgba(255, 255, 255, 0.7);
+            --accent: #a8dadc;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Outfit', sans-serif;
+            background-color: #0d0d0d;
+            background-repeat: no-repeat;
+            background-size: 115% 115%;
+            background-position: center;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-primary);
+            overflow: hidden;
+        }
+
+        /* Weather Canvas Overlay (Particles) */
+        #weather-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+            /* Above background, below content */
+        }
+
+        .container {
+            position: relative;
+            z-index: 10;
+            width: 92%;
+            max-width: 950px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        @media(min-width: 800px) {
+            .container {
+                flex-direction: row;
+                align-items: flex-start;
+                justify-content: center;
+            }
+        }
+
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            box-shadow: var(--glass-shadow);
+            padding: 40px;
+            transition: transform 0.1s ease-out;
+        }
+
+        .weather-card {
+            flex: 1.3;
+            text-align: center;
+            animation: fadeUp 0.8s ease-out;
+            position: relative;
+            z-index: 20;
+        }
+
+        .app-title {
+            font-size: 2.2rem;
+            font-weight: 200;
+            letter-spacing: 3px;
+            margin-bottom: 35px;
+            color: rgba(255, 255, 255, 0.95);
+            text-transform: uppercase;
+        }
+
+        .search-wrapper {
+            position: relative;
+            margin-bottom: 40px;
+            display: flex;
+            gap: 12px;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        input {
+            flex-grow: 1;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 14px 20px;
+            border-radius: 14px;
+            color: white;
+            font-family: inherit;
+            font-size: 1rem;
+            font-weight: 300;
+            outline: none;
+            transition: 0.3s;
+        }
+
+        input:focus {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        button {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: white;
+            width: 48px;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        button:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        /* Autocomplete */
+        .autocomplete-items {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 60px;
+            background: rgba(20, 20, 30, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            margin-top: 8px;
+            z-index: 100;
+            overflow: hidden;
+            max-height: 250px;
+            overflow-y: auto;
+        }
+
+        .autocomplete-items div {
+            padding: 12px 20px;
+            cursor: pointer;
+            text-align: left;
+            font-weight: 300;
+            font-size: 0.95rem;
+            color: rgba(255, 255, 255, 0.9);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .autocomplete-items div:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        /* Stats */
+        .city-name {
+            font-size: 3rem;
+            font-weight: 600;
+            margin: 0;
+            line-height: 1.1;
+        }
+
+        .weather-desc {
+            font-size: 1.3rem;
+            font-weight: 300;
+            opacity: 0.8;
+            margin-bottom: 25px;
+            margin-top: 5px;
+        }
+
+        .temp-display {
+            font-size: 7.5rem;
+            font-weight: 100;
+            line-height: 1;
+            margin: 15px 0;
+            cursor: pointer;
+            position: relative;
+            display: inline-block;
+        }
+
+        .temp-unit {
+            font-size: 2.5rem;
+            position: absolute;
+            top: 15px;
+            right: -35px;
+            font-weight: 300;
+            opacity: 0.6;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        .stat-val {
+            font-size: 1.3rem;
+            font-weight: 400;
+        }
+
+        /* Info Card */
+        .info-card {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 45px;
+            animation: fadeUp 1s ease-out 0.2s backwards;
+            z-index: 20;
+        }
+
+        /* AQI */
+        .aqi-score {
+            font-size: 4rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .aqi-text {
+            font-size: 1.3rem;
+            color: var(--accent);
+            font-weight: 400;
+        }
+
+        .aqi-bar-bg {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            margin-top: 20px;
+            position: relative;
+        }
+
+        .aqi-bar-fill {
+            height: 100%;
+            width: 100%;
+            border-radius: 4px;
+            background: linear-gradient(90deg, #68d391, #f6e05e, #ed8936, #e53e3e, #805ad5, #702459);
+            opacity: 0.9;
+        }
+
+        /* Indicator moved by JS */
+        .aqi-indicator {
+            position: absolute;
+            top: -6px;
+            width: 6px;
+            height: 20px;
+            background: #fff;
+            border-radius: 3px;
+            box-shadow: 0 0 8px rgba(0, 0, 0, 0.4);
+            transition: left 1s ease-out;
+        }
+
+        .outfit-icon {
+            font-size: 2.2rem;
+            margin-bottom: 12px;
+            display: block;
+            opacity: 1;
+        }
+
+        .outfit-text {
+            font-size: 1.15rem;
+            line-height: 1.5;
+            font-weight: 300;
+            opacity: 0.9;
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        footer {
+            position: fixed;
+            bottom: 30px;
+            right: 40px;
+            text-align: right;
+            pointer-events: none;
+            z-index: 30;
+        }
+
+        .author {
+            font-weight: 300;
+            font-size: 0.85rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .error-msg {
+            background: rgba(255, 0, 0, 0.15);
+            padding: 15px;
+            border-radius: 12px;
+            color: #ffcccc;
+            border: 1px solid rgba(255, 0, 0, 0.3);
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Particle System Canvas -->
+    <canvas id="weather-canvas"></canvas>
+
+    <div class="container" id="tilt-container">
+        <!-- Weather Card -->
+        <div class="glass-card weather-card">
+            <div class="app-title">SkyCast</div>
+
+            <form method="POST" action="/" class="search-wrapper" autocomplete="off">
+                <input type="text" id="cityInput" name="city" placeholder="Search city...">
+                <button type="button" id="loc-btn" title="My Location">📍</button>
+                <button type="submit">➝</button>
+                <div id="autocomplete-list" class="autocomplete-items"></div>
+            </form>
+
+            <form method="POST" action="/" id="geo-form" style="display:none;">
+                <input type="hidden" name="lat" id="lat-input">
+                <input type="hidden" name="lon" id="lon-input">
+            </form>
+
+            {% if weather %}
+            {% if weather.error %}
+            <div class="error-msg">{{ weather.error }}</div>
+            {% else %}
+            <div class="city-name">{{ weather.city }}</div>
+            <div class="weather-desc">{{ weather.desc }}</div>
+
+            <div class="temp-display" id="temp-toggle">
+                <span id="temp-val">{{ weather.temp }}</span><span class="temp-unit" id="temp-unit">°C</span>
+            </div>
+
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-label">Humidity</div>
+                    <div class="stat-val">{{ weather.humidity }}%</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Wind</div>
+                    <div class="stat-val">{{ weather.wind }} m/s</div>
+                </div>
+            </div>
+            {% endif %}
+            {% endif %}
+        </div>
+
+        {% if weather and not weather.error %}
+        <!-- Info Card -->
+        <div class="glass-card info-card">
+
+            <!-- AQI -->
+            <div>
+                <div class="stat-label">Air Quality Index</div>
+                <div style="display: flex; align-items: baseline; gap: 15px; margin-bottom: 10px; margin-top:10px;">
+                    <div class="aqi-score" id="aqi-val">{{ weather.aqi }}</div>
+                    <div class="aqi-text">{{ weather.aqi_desc }}</div>
+                </div>
+
+                <div class="aqi-bar-bg">
+                    <div class="aqi-bar-fill"></div>
+                    <div class="aqi-indicator" id="aqi-pointer"></div>
+                </div>
+                <div
+                    style="display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-muted); margin-top: 8px;">
+                    <span>0</span><span>500</span>
+                </div>
+            </div>
+
+            <hr style="border:0; border-top:1px solid rgba(255,255,255,0.1);">
+
+            <!-- Outfit -->
+            <div>
+                <div class="stat-label">Suggestion</div>
+                <div style="margin-top: 15px;">
+                    <span class="outfit-icon">👕</span>
+                    <div class="outfit-text">{{ weather.outfit }}</div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <footer>
+        <div class="author">Designed by Ishan</div>
+    </footer>
+
+    <script>
+        // --- 1. Background Image + Physics ---
+        const weatherCode = "{{ weather.main|lower if weather else 'clear' }}";
+        const hour = new Date().getHours();
+        const isNight = hour < 6 || hour > 19;
+
+        const backgrounds = {
+            'clear': isNight ? 'https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?auto=format&fit=crop&w=1920&q=80'
+                : 'https://images.unsplash.com/photo-1622278647429-71bc97e9ee93?auto=format&fit=crop&w=1920&q=80',
+            'clouds': 'https://images.unsplash.com/photo-1534088568595-a066f410bcda?auto=format&fit=crop&w=1920&q=80',
+            'rain': 'https://images.unsplash.com/photo-1428592953211-077101b26bd1?auto=format&fit=crop&w=1920&q=80', // Darker rain
+            'drizzle': 'https://images.unsplash.com/photo-1541913170727-b4618a8f9f69?auto=format&fit=crop&w=1920&q=80',
+            'thunderstorm': 'https://images.unsplash.com/photo-1605727216801-e27ce1d0cc28?auto=format&fit=crop&w=1920&q=80',
+            'snow': 'https://images.unsplash.com/photo-1477601263568-180e2c6d046e?auto=format&fit=crop&w=1920&q=80',
+            'mist': 'https://images.unsplash.com/photo-1487621167305-5d248087c724?auto=format&fit=crop&w=1920&q=80',
+        };
+
+        const bgUrl = backgrounds[weatherCode] || backgrounds['clear'];
+        const img = new Image();
+        img.src = bgUrl;
+        img.onload = () => { document.body.style.backgroundImage = `url('${bgUrl}')`; };
+
+        // Physics Momentum
+        let targetX = 0, targetY = 0;
+        let currentX = 0, currentY = 0;
+
+        document.addEventListener('mousemove', (e) => {
+            targetX = (window.innerWidth / 2 - e.clientX) / 25;
+            targetY = (window.innerHeight / 2 - e.clientY) / 25;
+        });
+
+        function animateBg() {
+            currentX += (targetX - currentX) * 0.08;
+            currentY += (targetY - currentY) * 0.08;
+
+            document.body.style.backgroundPosition = `calc(50% + ${currentX}px) calc(50% + ${currentY}px)`;
+
+            const container = document.getElementById('tilt-container');
+            if (container) {
+                // Subtle 3D tilt
+                container.style.transform = `perspective(1000px) rotateY(${currentX * 0.3}deg) rotateX(${-currentY * 0.3}deg)`;
+            }
+            requestAnimationFrame(animateBg);
+        }
+        animateBg();
+
+
+        // --- 2. Live Particle System (Rain/Snow) ---
+        const canvas = document.getElementById('weather-canvas');
+        const ctx = canvas.getContext('2d');
+        let width = window.innerWidth;
+        let height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+
+        const particles = [];
+        const maxParticles = 150;
+
+        // Determine type based on weather
+        let particleType = 'none';
+        if (weatherCode.includes('rain') || weatherCode.includes('drizzle') || weatherCode.includes('thunder')) particleType = 'rain';
+        else if (weatherCode.includes('snow')) particleType = 'snow';
+        else if (weatherCode.includes('mist') || weatherCode.includes('fog')) particleType = 'mist';
+
+        class Particle {
+            constructor() {
+                this.reset();
+            }
+            reset() {
+                this.x = Math.random() * width;
+                this.y = Math.random() * height - height; // Start above
+                this.speed = Math.random() * 5 + 5; // Rain speed
+                if (particleType === 'snow') this.speed = Math.random() * 2 + 1; // Snow speed
+                this.size = Math.random() * 2 + 1;
+                this.opacity = Math.random() * 0.5 + 0.3;
+            }
+            update() {
+                this.y += this.speed;
+                if (particleType === 'snow') this.x += Math.sin(this.y * 0.01) * 0.5; // Sway
+
+                if (this.y > height) {
+                    this.reset();
+                }
+            }
+            draw() {
+                ctx.fillStyle = `rgba(255, 255, 255, ${this.opacity})`;
+                ctx.beginPath();
+                if (particleType === 'rain') {
+                    ctx.rect(this.x, this.y, 1, this.size * 5); // Long streak
+                } else if (particleType === 'snow') {
+                    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                } else if (particleType === 'mist') {
+                    ctx.arc(this.x, this.y, this.size * 20, 0, Math.PI * 2); // Big soft circles
+                }
+                ctx.fill();
+            }
+        }
+
+        if (particleType !== 'none') {
+            for (let i = 0; i < maxParticles; i++) particles.push(new Particle());
+
+            function animateParticles() {
+                ctx.clearRect(0, 0, width, height);
+                particles.forEach(p => {
+                    p.update();
+                    p.draw();
+                });
+                requestAnimationFrame(animateParticles);
+            }
+            animateParticles();
+        }
+
+        window.addEventListener('resize', () => {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        });
+
+
+        // --- 3. AQI Fix ---
+        const aqiEl = document.getElementById('aqi-val');
+        const pointer = document.getElementById('aqi-pointer');
+        if (aqiEl && pointer) {
+            const val = parseInt(aqiEl.innerText);
+            // Calculate percentage (0-500 scale)
+            let pct = (val / 500) * 100;
+            if (pct > 100) pct = 100;
+            if (pct < 0) pct = 0;
+
+            // Set position
+            pointer.style.left = pct + '%';
+        }
+
+        // --- 4. Autocomplete & Logic (Copied from previous) ---
+        const cities = ["New York", "London", "Tokyo", "Paris", "Berlin", "Panipat", "Moscow", "Sydney", "Dubai", "Singapore", "Barcelona", "Los Angeles", "Rome", "Toronto", "Chicago", "Mumbai", "Delhi", "Bengaluru", "Chennai", "Kolkata"];
+        const inp = document.getElementById("cityInput");
+        const list = document.getElementById("autocomplete-list");
+
+        inp.addEventListener("input", function () {
+            let val = this.value;
+            list.innerHTML = '';
+            if (!val) return;
+            let c = 0;
+            for (let city of cities) {
+                if (city.substr(0, val.length).toUpperCase() == val.toUpperCase()) {
+                    let div = document.createElement("DIV");
+                    div.innerText = city;
+                    div.onclick = () => { inp.value = city; list.innerHTML = ''; };
+                    list.appendChild(div);
+                    c++; if (c > 5) break;
+                }
+            }
+        });
+
+        // Temp Toggle
+        const tDisp = document.getElementById('temp-toggle');
+        let isC = true;
+        if (tDisp) {
+            tDisp.addEventListener('click', () => {
+                const valSp = document.getElementById('temp-val');
+                const unitSp = document.getElementById('temp-unit');
+                let v = parseFloat(valSp.innerText);
+                if (isC) { valSp.innerText = Math.round(v * 1.8 + 32); unitSp.innerText = "°F"; }
+                else { valSp.innerText = Math.round((v - 32) / 1.8); unitSp.innerText = "°C"; }
+                isC = !isC;
+            });
+        }
+
+        // Geolocation
+        document.getElementById('loc-btn').addEventListener('click', function () {
+            if (navigator.geolocation) {
+                this.innerText = "...";
+                navigator.geolocation.getCurrentPosition(pos => {
+                    document.getElementById('lat-input').value = pos.coords.latitude;
+                    document.getElementById('lon-input').value = pos.coords.longitude;
+                    document.getElementById('geo-form').submit();
+                });
+            }
+        });
+
+    </script>
+</body>
+
+</html>
