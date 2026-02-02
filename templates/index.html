@@ -23,14 +23,22 @@
             font-family: 'Outfit', sans-serif;
             background-color: #0d0d0d;
             background-repeat: no-repeat;
-            background-size: 115% 115%;
+            background-size: cover;
+            /* Changed from 115% to cover for better stability */
             background-position: center;
-            height: 100vh;
+            /* Using min-height and dynamic viewport height */
+            min-height: 100vh;
+            min-height: -webkit-fill-available;
             display: flex;
+            flex-direction: column;
+            /* Better for mobile stacking */
             align-items: center;
             justify-content: center;
             color: var(--text-primary);
-            overflow: hidden;
+            overflow-x: hidden;
+            /* Prevent horizontal scroll */
+            overflow-y: auto;
+            /* Allow scrolling if content is tall */
         }
 
         /* Weather Canvas Overlay (Particles) */
@@ -53,6 +61,9 @@
             display: flex;
             flex-direction: column;
             gap: 20px;
+            transform-style: preserve-3d;
+            /* Smooths out the tilt effect */
+            padding: 20px 0;
         }
 
         @media(min-width: 800px) {
@@ -65,13 +76,26 @@
 
         .glass-card {
             background: var(--glass-bg);
-            backdrop-filter: blur(25px);
+            /* iPhone Safari requires the -webkit prefix for blur */
             -webkit-backdrop-filter: blur(25px);
+            backdrop-filter: blur(25px);
             border: 1px solid var(--glass-border);
             border-radius: 24px;
             box-shadow: var(--glass-shadow);
             padding: 40px;
             transition: transform 0.1s ease-out;
+        }
+
+        /* 3. Search Bar Button Fix for small screens */
+        @media (max-width: 400px) {
+            .search-wrapper {
+                gap: 8px;
+            }
+
+            button {
+                width: 40px;
+                min-width: 40px;
+            }
         }
 
         .weather-card {
@@ -568,6 +592,10 @@
             targetY = (window.innerHeight / 2 - e.clientY) / 25;
         });
 
+        // --- Optimized Physics for Mobile ---
+        // Disable or dampen the tilt effect on touch devices to prevent "shaking"
+        const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
         function animateBg() {
             currentX += (targetX - currentX) * 0.08;
             currentY += (targetY - currentY) * 0.08;
@@ -575,8 +603,7 @@
             document.body.style.backgroundPosition = `calc(50% + ${currentX}px) calc(50% + ${currentY}px)`;
 
             const container = document.getElementById('tilt-container');
-            if (container) {
-                // Subtle 3D tilt
+            if (container && !isTouchDevice) { // Only tilt on Desktop
                 container.style.transform = `perspective(1000px) rotateY(${currentX * 0.3}deg) rotateX(${-currentY * 0.3}deg)`;
             }
             requestAnimationFrame(animateBg);
