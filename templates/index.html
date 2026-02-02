@@ -328,6 +328,40 @@
             border: 1px solid rgba(255, 0, 0, 0.3);
         }
 
+        /* Start View Specifics */
+        .weather-card.start-view {
+            flex: initial;
+            width: 100%;
+            max-width: 580px;
+            margin: 0 auto;
+            padding: 60px 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .start-subtitle {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            margin-bottom: 40px;
+            margin-top: -25px;
+            letter-spacing: 1px;
+            font-weight: 300;
+        }
+
+        /* Adjustments for Start View on Mobile */
+        @media (max-width: 600px) {
+            .weather-card.start-view {
+                padding: 40px 20px;
+                max-width: 100%;
+            }
+
+            .start-subtitle {
+                font-size: 1rem;
+                margin-bottom: 30px;
+            }
+        }
+
         /* Mobile Optimization */
         @media (max-width: 600px) {
             .container {
@@ -413,8 +447,11 @@
 
     <div class="container" id="tilt-container">
         <!-- Weather Card -->
-        <div class="glass-card weather-card">
+        <div class="glass-card weather-card {{ 'start-view' if not weather else '' }}">
             <div class="app-title">SkyCast</div>
+            {% if not weather %}
+            <div class="start-subtitle">Real-time Global Weather Intelligence</div>
+            {% endif %}
 
             <form method="POST" action="/" class="search-wrapper" autocomplete="off">
                 <input type="text" id="cityInput" name="city" placeholder="Search city...">
