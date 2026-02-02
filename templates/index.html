@@ -434,13 +434,14 @@
 
             /* Center footer on mobile so it doesn't overlap content or look weird */
             footer {
-                position: static;
+                position: static !important;
                 margin-top: 40px;
                 padding-bottom: 20px;
                 text-align: center;
                 width: 100%;
                 right: auto;
                 bottom: auto;
+                z-index: 100;
             }
         }
     </style>
