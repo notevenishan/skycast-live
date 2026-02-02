@@ -338,6 +338,12 @@
             display: flex;
             flex-direction: column;
             justify-content: center;
+            text-align: center;
+        }
+
+        .weather-card.start-view .search-wrapper {
+            justify-content: center;
+            max-width: 100%;
         }
 
         .start-subtitle {
@@ -428,13 +434,13 @@
 
             /* Center footer on mobile so it doesn't overlap content or look weird */
             footer {
-                position: relative;
-                bottom: auto;
-                right: auto;
+                position: static;
                 margin-top: 40px;
                 padding-bottom: 20px;
                 text-align: center;
                 width: 100%;
+                right: auto;
+                bottom: auto;
             }
         }
     </style>
@@ -537,7 +543,7 @@
         const isNight = hour < 6 || hour > 19;
 
         const backgrounds = {
-            'clear': isNight ? 'https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?auto=format&fit=crop&w=1920&q=80'
+            'clear': isNight ? 'https://images.unsplash.com/photo-1477346611705-65d1883cee1e?auto=format&fit=crop&w=1920&q=80'
                 : 'https://images.unsplash.com/photo-1622278647429-71bc97e9ee93?auto=format&fit=crop&w=1920&q=80',
             'clouds': 'https://images.unsplash.com/photo-1534088568595-a066f410bcda?auto=format&fit=crop&w=1920&q=80',
             'rain': 'https://images.unsplash.com/photo-1428592953211-077101b26bd1?auto=format&fit=crop&w=1920&q=80', // Darker rain
