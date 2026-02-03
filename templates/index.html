@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SkyCast | Antigravity Live</title>
+    <title>SkyCast | skycastlive.xyz</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100;200;300;400;500;700&display=swap"
         rel="stylesheet">
     <style>
@@ -225,6 +225,26 @@
             right: -35px;
             font-weight: 300;
             opacity: 0.6;
+        }
+
+        /* Hover Preview for Alt Unit */
+        .temp-alt-preview {
+            font-size: 1.5rem;
+            font-weight: 300;
+            color: var(--accent);
+            opacity: 0;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            position: absolute;
+            bottom: -25px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-10px);
+            white-space: nowrap;
+            pointer-events: none;
+        }
+
+        .temp-display:hover .temp-alt-preview {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
         }
 
         .stats {
@@ -505,6 +525,7 @@
 
             <div class="temp-display" id="temp-toggle">
                 <span id="temp-val">{{ weather.temp }}</span><span class="temp-unit" id="temp-unit">°C</span>
+                <div class="temp-alt-preview" id="temp-alt"></div>
             </div>
 
             <div class="stats">
@@ -718,16 +739,42 @@
         });
 
         // Temp Toggle
+        // Temp Toggle & Hover Logic
         const tDisp = document.getElementById('temp-toggle');
+        const altDisp = document.getElementById('temp-alt');
         let isC = true;
-        if (tDisp) {
+
+        if (tDisp && altDisp) {
+            const toF = (c) => Math.round(c * 1.8 + 32);
+            const toC = (f) => Math.round((f - 32) / 1.8);
+
+            const updateAlt = () => {
+                const currentVal = parseFloat(document.getElementById('temp-val').innerText);
+                if (isC) {
+                    // Current is C, show F preview
+                    altDisp.innerText = `${toF(currentVal)}°F`;
+                } else {
+                    // Current is F, show C preview
+                    altDisp.innerText = `${toC(currentVal)}°C`;
+                }
+            };
+
+            tDisp.addEventListener('mouseenter', updateAlt);
+
             tDisp.addEventListener('click', () => {
                 const valSp = document.getElementById('temp-val');
                 const unitSp = document.getElementById('temp-unit');
                 let v = parseFloat(valSp.innerText);
-                if (isC) { valSp.innerText = Math.round(v * 1.8 + 32); unitSp.innerText = "°F"; }
-                else { valSp.innerText = Math.round((v - 32) / 1.8); unitSp.innerText = "°C"; }
+
+                if (isC) {
+                    valSp.innerText = toF(v);
+                    unitSp.innerText = "°F";
+                } else {
+                    valSp.innerText = toC(v);
+                    unitSp.innerText = "°C";
+                }
                 isC = !isC;
+                updateAlt(); // Update preview immediately
             });
         }
 
