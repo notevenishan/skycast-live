@@ -39,6 +39,10 @@
             /* Prevent horizontal scroll */
             overflow-y: auto;
             /* Allow scrolling if content is tall */
+
+            /* Default fallback background while JS loads or if it fails */
+            background-image: url('https://images.unsplash.com/photo-1622278647429-71bc97e9ee93?auto=format&fit=crop&w=1920&q=80');
+            transition: background-image 0.5s ease-in-out;
         }
 
         /* Weather Canvas Overlay (Particles) */
@@ -600,9 +604,13 @@
         };
 
         const bgUrl = backgrounds[weatherCode] || backgrounds['clear'];
+
+        // Set immediately to avoid waiting for full load (better for mobile connections)
+        document.body.style.backgroundImage = `url('${bgUrl}')`;
+
+        // Optional: Preload for cache but don't block
         const img = new Image();
         img.src = bgUrl;
-        img.onload = () => { document.body.style.backgroundImage = `url('${bgUrl}')`; };
 
         // Physics Momentum
         let targetX = 0, targetY = 0;
